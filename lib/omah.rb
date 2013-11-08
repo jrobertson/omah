@@ -15,7 +15,7 @@ class Omah
 
   def store messages
 
-    messages.each {|message| dd.create message }
+    messages.each {|message| @dd.create message }
     @dd.save
   end
 
