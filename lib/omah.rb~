@@ -18,7 +18,7 @@ class Omah
     
     x = if File.exists? dailyfile then dailyfile
     else
-      'messagesp[date]/message(id, tags, from, to, subject, date, txt_filepath, html_filepath)'
+      'messages[date]/message(id, tags, from, to, subject, date, txt_filepath, html_filepath)'
     end
     
     @dd = DynarexDaily.new x, {dir_archive: :yearly}
