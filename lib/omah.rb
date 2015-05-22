@@ -3,9 +3,11 @@
 # file: omah.rb
 # title: Offline Mail Helper
 
+require 'zip'
+require 'nokorexi'
 require 'dynarex-daily'
 
-lass Omah
+class Omah
 
   def initialize(options={})
 
@@ -46,13 +48,55 @@ lass Omah
       txt_filepath = File.join(path, txt_file)
       html_filepath = File.join(path, html_file)
       
-      @dd.create msg.merge(txt_filepath: txt_filepath, \
-                                                html_filepath: html_filepath)
 
       FileUtils.mkdir_p path
 
-      File.write txt_filepath, msg[:body_text]
-      File.write html_filepath, msg[:body_html]
+      File.write txt_filepath, text_sanitiser(msg[:body_text].to_s)
+      File.write html_filepath, html_sanitiser(msg[:body_html].to_s)
+      
+      parts_path = []
+      
+      # save the attachments
+      if msg[:attachments].length > 0 then
+        
+        attachment_path = File.join(path, title + ordinal)
+        FileUtils.mkdir_p attachment_path
+        
+        if msg[:attachments].length < 4 then
+          
+          msg[:attachments].each.with_index do |x, i|
+            
+            name, buffer = x
+            parts_path[i] = File.join(attachment_path, name)
+            File.write parts_path[i], buffer
+            
+          end
+          
+        else
+          
+          # make a zip file and add the attachments to it
+          
+          zipfile = File.join(attachment_path, title[0,12].downcase + '.zip')
+          parts_path[0] = zipfile
+
+          Zip::File.open(zipfile, Zip::File::CREATE) do |x|
+
+            msg[:attachments].each do |filename, buffer| 
+              x.get_output_stream(filename) {|os| os.write buffer }
+            end
+
+          end          
+          
+        end        
+
+      end
+      
+      msg.delete :attachments
+
+      @dd.create msg.merge(txt_filepath: txt_filepath, \
+            html_filepath: html_filepath, attachment1: parts_path[0], \
+                        attachment2: parts_path[1], attachment3: parts_path[2])
+      
       
     end
 
@@ -68,5 +112,31 @@ lass Omah
                           Date::MONTHNAMES[t.month].downcase[0..2], t.day.to_s]
 
   end
+  
+
+  def html_sanitiser(s)
+
+    begin
+      Rexle.new s
+      s2 = s
+    rescue
+      doc = Nokorexi.new(s).to_doc
+      s2 = doc.xml
+    end
+
+  end
+
+  def text_sanitiser(s)
+
+    begin
+      Rexle.new "<root>#{s}</root>"
+      s2 = s
+    rescue
+      doc = Nokorexi.new(s).to_doc
+      s2 = doc.xml
+    end
+
+  end
+    
 
 end

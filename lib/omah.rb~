@@ -3,9 +3,11 @@
 # file: omah.rb
 # title: Offline Mail Helper
 
+require 'zip'
+require 'nokorexi'
 require 'dynarex-daily'
 
-class Omah
+lass Omah
 
   def initialize(options={})
 
@@ -18,7 +20,8 @@ class Omah
     
     x = if File.exists? dailyfile then dailyfile
     else
-      'messages[date]/message(id, tags, from, to, subject, date, txt_filepath, html_filepath)'
+      'messages[date]/message(id, tags, from, to, subject, date, ' \
+        + 'txt_filepath, html_filepath, attachment1, attachment2, attachment3)'
     end
     
     @dd = DynarexDaily.new x, {dir_archive: :yearly}
@@ -31,7 +34,8 @@ class Omah
 
       subject = msg[:subject]
       title = subject.gsub(/\W+/,'-')[0,30].sub(/-$/,'')
-      a = @dd.find_all_by_subject subject
+
+      a = @dd.all.select {|x| x.subject == subject}
       
       ordinal = a.any? ? '.' + a.length.to_s : ''
       txt_file = title + ordinal + '.txt'
@@ -48,6 +52,7 @@ class Omah
                                                 html_filepath: html_filepath)
 
       FileUtils.mkdir_p path
+
       File.write txt_filepath, msg[:body_text]
       File.write html_filepath, msg[:body_html]
       
