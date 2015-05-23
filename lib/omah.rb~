@@ -19,10 +19,14 @@ end
 
 class Omah
 
-  def initialize(options={})
+  include Library
+  
+  def initialize(options={xslt: 'listing.xsl'})
 
     opt = {user: 'user'}.merge options
     @user = opt[:user]
+    @xslt = opt[:xslt]
+    
     FileUtils.mkdir_p @user # attempt to mkdir regardless if it already exists
     Dir.chdir @user
     
@@ -61,7 +65,12 @@ class Omah
 
       FileUtils.mkdir_p path
 
-      File.write txt_filepath, text_sanitiser(msg[:body_text].to_s)
+      if msg[:body_text].to_s.strip[0] == '<' then
+        txt_filepath = ''
+      else
+        File.write txt_filepath, text_sanitiser(msg[:body_text].to_s)        
+      end
+      
       File.write html_filepath, html_sanitiser(msg[:body_html].to_s)
       
       parts_path = []
@@ -106,9 +115,21 @@ class Omah
       @dd.create msg.merge(txt_filepath: txt_filepath, \
             html_filepath: html_filepath, attachment1: parts_path[0], \
                         attachment2: parts_path[1], attachment3: parts_path[2])
+
       
       
     end
+    
+    if @xslt then
+      
+      unless File.exists? @xslt then
+        File.write File.expand_path(@xslt), fetch_file(@xslt) 
+      end
+      
+      @dd.xslt = @xslt
+
+    end
+    
 
     @dd.save
   end
