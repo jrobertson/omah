@@ -155,7 +155,10 @@ class Omah
   end  
   
   def classify(e)
-    s = e.text 
+    
+    s = e.text.to_s    
+    return if s.empty?
+    
     e.attributes[:css_class] = NoVowels.compact(e.text[/[^@]+$/].gsub('.',''))
   end    
 
@@ -182,6 +185,5 @@ class Omah
     end
 
   end
-    
 
 end
