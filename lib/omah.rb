@@ -6,6 +6,7 @@
 require 'zip'
 require 'nokorexi'
 require 'dynarex-daily'
+require 'novowels'
 
 module Library
 

@@ -130,8 +130,17 @@ class Omah
 
     end
     
+    
+    doc = @dd.to_doc
 
-    @dd.save
+    doc.root.xpath('records/message').each do |message|
+      
+      classify message.element('from')
+      classify message.element('to')
+      
+    end
+    
+    File.write 'dynarexdaily.xml', doc.xml(pretty: true)
   end
   
   private
@@ -142,8 +151,12 @@ class Omah
     path = File.join ['archive', t.year.to_s, \
                           Date::MONTHNAMES[t.month].downcase[0..2], t.day.to_s]
 
-  end
+  end  
   
+  def classify(e)
+    s = e.text 
+    e.attributes[:css_class] = NoVowels.compact(e.text[/[^@]+$/].gsub('.',''))
+  end    
 
   def html_sanitiser(s)
 
