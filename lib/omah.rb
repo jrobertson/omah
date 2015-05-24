@@ -39,7 +39,7 @@ class Omah
         + 'txt_filepath, html_filepath, attachment1, attachment2, attachment3)'
     end
     
-    @dd = DynarexDaily.new x, {dir_archive: :yearly}
+    @dd = DynarexDaily.new x, options: {dir_archive: :yearly}
 
   end
 
@@ -116,7 +116,6 @@ class Omah
       @dd.create msg.merge(txt_filepath: txt_filepath, \
             html_filepath: html_filepath, attachment1: parts_path[0], \
                         attachment2: parts_path[1], attachment3: parts_path[2])
-
       
       
     end
@@ -124,7 +123,8 @@ class Omah
     if @xslt then
       
       unless File.exists? @xslt then
-        File.write File.expand_path(@xslt), fetch_file(@xslt) 
+        File.write File.expand_path(@xslt), fetch_file(@xslt)
+        File.write File.expand_path(@xslt), fetch_file('listing.css')
       end
       
       @dd.xslt = @xslt
@@ -185,5 +185,6 @@ class Omah
     end
 
   end
+    
 
 end
