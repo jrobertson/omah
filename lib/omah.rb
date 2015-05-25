@@ -41,22 +41,18 @@ class Omah
     
     @dd = DynarexDaily.new x, options: {dir_archive: :yearly}
     
-    log = Logger.new '/tmp/omah.log'
     
     # intialize plugins
-    log.debug 'plugins : ' + plugins.inspect
         
     @plugins = plugins.inject([]) do |r, plugin|
       
-      log.debug 'plugin : ' + plugin.inspect
       name, settings = plugin
       return r if settings[:active] == false and !settings[:active]
-      log.debug 'pl.. ' + plugin.inspect
       
       klass_name = 'OmahPlugin' + name.to_s.split(/[-_]/).map{|x| x.capitalize}.join
-      log.debug 'klass :'  + klass_name.inspect
+
       r << Kernel.const_get(klass_name).new(settings: settings, variables: @variables)
-      #exit
+
     end    
 
   end
