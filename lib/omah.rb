@@ -22,14 +22,14 @@ class Omah
 
   include Library
   
-  def initialize(options={xslt: 'listing.xsl'})
+  def initialize(user: 'user', filepath: '.', options: {xslt: 'listing.xsl'}, plugins: [] )
 
-    opt = {user: 'user'}.merge options
-    @user = opt[:user]
-    @xslt = opt[:xslt]
+    @user = user
+    @xslt = options[:xslt]
+    @variables ||= {}
     
     FileUtils.mkdir_p @user # attempt to mkdir regardless if it already exists
-    Dir.chdir @user
+    Dir.chdir File.join(filepath, @user)
     
     dailyfile = 'dynarexdaily.xml'
     
@@ -40,6 +40,24 @@ class Omah
     end
     
     @dd = DynarexDaily.new x, options: {dir_archive: :yearly}
+    
+    log = Logger.new '/tmp/omah.log'
+    
+    # intialize plugins
+    log.debug 'plugins : ' + plugins.inspect
+        
+    @plugins = plugins.inject([]) do |r, plugin|
+      
+      log.debug 'plugin : ' + plugin.inspect
+      name, settings = plugin
+      return r if settings[:active] == false and !settings[:active]
+      log.debug 'pl.. ' + plugin.inspect
+      
+      klass_name = 'OmahPlugin' + name.to_s.split(/[-_]/).map{|x| x.capitalize}.join
+      log.debug 'klass :'  + klass_name.inspect
+      r << Kernel.const_get(klass_name).new(settings: settings, variables: @variables)
+      #exit
+    end    
 
   end
 
@@ -116,8 +134,7 @@ class Omah
       @dd.create msg.merge(txt_filepath: txt_filepath, \
             html_filepath: html_filepath, attachment1: parts_path[0], \
                         attachment2: parts_path[1], attachment3: parts_path[2])
-      
-      
+            
     end
     
     if @xslt then
@@ -141,7 +158,9 @@ class Omah
       
     end
     
-    File.write 'dynarexdaily.xml', doc.xml(pretty: true)
+    @plugins.each{|x| x.on_newmail(messages, doc) }
+    File.write 'dynarexdaily.xml', doc.xml(pretty: true)    
+    
   end
   
   private
@@ -176,6 +195,7 @@ class Omah
 =end
     s
   end
+  
 
   def text_sanitiser(s)
 

@@ -163,7 +163,9 @@ class Omah
   end    
 
   def html_sanitiser(s)
-
+    # Parsing HTML has proved problematic either way. Instead we will just 
+    # return whatever is given.
+=begin
     begin
       Rexle.new s
       s2 = s
@@ -171,7 +173,8 @@ class Omah
       doc = Nokorexi.new(s).to_doc
       s2 = doc.xml
     end
-
+=end
+    s
   end
 
   def text_sanitiser(s)
