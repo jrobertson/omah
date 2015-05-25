@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'omah'
-  s.version = '0.5.3'
+  s.version = '0.5.4'
   s.summary = 'Offline Mail Helper: Stores email messages in a file directory archive'
   s.authors = ['James Robertson']
   s.files = Dir['lib/omah.rb','stylesheet/listing.xsl','stylesheet/listing.css']
