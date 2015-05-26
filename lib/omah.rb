@@ -27,8 +27,9 @@ class Omah
     @user = user
     @xslt = options[:xslt]
     @variables ||= {}
-    
-    FileUtils.mkdir_p @user # attempt to mkdir regardless if it already exists
+        
+    FileUtils.mkdir_p File.join(filepath, @user) # attempt to 
+    #                                     mkdir regardless if it already exists
     Dir.chdir File.join(filepath, @user)
     
     dailyfile = 'dynarexdaily.xml'
