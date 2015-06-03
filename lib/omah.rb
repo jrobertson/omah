@@ -30,10 +30,15 @@ class Omah
 
 
     filepath_user = File.join(filepath, @user)    
-    
+
+
+    Dir.chdir filepath
+
     FileUtils.mkdir_p filepath_user # attempt to 
     #                                     mkdir regardless if it already exists
+
     Dir.chdir filepath_user
+
     
     dailyfile = 'dynarexdaily.xml'
     
@@ -198,7 +203,9 @@ class Omah
   
 
   def text_sanitiser(s)
-
+    # Parsing HTML has proved problematic either way. Instead we will just 
+    # return whatever is given.
+=begin    
     begin
       Rexle.new "<root>#{s}</root>"
       s2 = s
@@ -206,7 +213,8 @@ class Omah
       doc = Nokorexi.new(s).to_doc
       s2 = doc.xml
     end
-
+=end
+    s
   end
     
 
