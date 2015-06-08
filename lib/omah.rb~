@@ -28,17 +28,14 @@ class Omah
     @xslt = options[:xslt]
     @variables ||= {}
 
-
-    filepath_user = File.join(filepath, @user)    
-
+    @filepath_user = File.expand_path(File.join(filepath, @user))
 
     Dir.chdir filepath
 
-    FileUtils.mkdir_p filepath_user # attempt to 
+    FileUtils.mkdir_p @filepath_user # attempt to 
     #                                     mkdir regardless if it already exists
 
-    Dir.chdir filepath_user
-
+    Dir.chdir @filepath_user
     
     dailyfile = 'dynarexdaily.xml'
     
@@ -164,7 +161,8 @@ class Omah
     end
     
     @plugins.each{|x| x.on_newmail(messages, doc) }
-    File.write 'dynarexdaily.xml', doc.xml(pretty: true)    
+    File.write File.join(@filepath_user, 'dynarexdaily.xml'), \
+                                                        doc.xml(pretty: true)
     
   end
   
@@ -173,7 +171,7 @@ class Omah
   def archive()
     
     t = Time.now
-    path = File.join ['archive', t.year.to_s, \
+    path = File.join [@filepath_user, 'archive', t.year.to_s, \
                           Date::MONTHNAMES[t.month].downcase[0..2], t.day.to_s]
 
   end  
