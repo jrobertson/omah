@@ -41,7 +41,7 @@ class Omah
     
     x = if File.exists? dailyfile then dailyfile
     else
-      'messages[date]/message(id, tags, from, to, subject, date, ' \
+      'messages[date]/message(msg_id, tags, from, to, subject, date, ' \
         + 'txt_filepath, html_filepath, attachment1, attachment2, attachment3)'
     end
     
@@ -65,19 +65,21 @@ class Omah
 
   def store messages
 
-    messages.each do |msg| 
+    messages.each.with_index do |msg,i|
+      
 
       subject = msg[:subject]
+      
       title = subject.gsub(/\W+/,'-')[0,30].sub(/-$/,'')
 
       a = @dd.all.select {|x| x.subject == subject}
-      
+
       ordinal = a.any? ? '.' + a.length.to_s : ''
       txt_file = title + ordinal + '.txt'
       html_file = title + ordinal + '.html'
 
-      id = msg[:id]
-      next if @dd.find_by_id id
+      id = msg[:msg_id]
+      next if @dd.find_by_msg_id id
 
       path = archive()      
       txt_filepath = File.join(path, txt_file)

@@ -89,17 +89,19 @@ class Omah
       if msg[:body_text].to_s.strip[0] == '<' then
         txt_filepath = ''
       else
-        File.write txt_filepath, text_sanitiser(msg[:body_text].to_s)        
+        File.write File.join(@filepath_user, txt_filepath), \
+                                      text_sanitiser(msg[:body_text].to_s)
       end
       
-      File.write html_filepath, html_sanitiser(msg[:body_html].to_s)
+      File.write File.join(@filepath_user, html_filepath), \
+                                      html_sanitiser(msg[:body_html].to_s)
       
       parts_path = []
       
       # save the attachments
       if msg[:attachments].length > 0 then
         
-        attachment_path = File.join(path, title + ordinal)
+        attachment_path = File.join(@filepath_user, path, title + ordinal)
         FileUtils.mkdir_p attachment_path
         
         if msg[:attachments].length < 4 then
@@ -171,7 +173,7 @@ class Omah
   def archive()
     
     t = Time.now
-    path = File.join [@filepath_user, 'archive', t.year.to_s, \
+    path = File.join ['archive', t.year.to_s, \
                           Date::MONTHNAMES[t.month].downcase[0..2], t.day.to_s]
 
   end  
