@@ -22,13 +22,15 @@ class Omah
 
   include Library
   
-  def initialize(user: 'user', filepath: '.', options: {xslt: 'listing.xsl'}, plugins: [] )
+  def initialize(user: 'user', filepath: '.', \
+             options: {xslt: 'listing.xsl'}, plugins: [], webpath: '/email' )
 
     @user = user
     @xslt = options[:xslt]
     @variables ||= {}
 
     @filepath_user = File.expand_path(File.join(filepath, @user))
+    @webpath_user = webpath +'/' + @user
 
     Dir.chdir filepath
 
@@ -103,7 +105,7 @@ class Omah
       # save the attachments
       if msg[:attachments].length > 0 then
         
-        attachment_path = File.join(@filepath_user, path, title + ordinal)
+        attachment_path = File.join(path, title + ordinal)
         FileUtils.mkdir_p attachment_path
         
         if msg[:attachments].length < 4 then
@@ -112,7 +114,7 @@ class Omah
             
             name, buffer = x
             parts_path[i] = File.join(attachment_path, name)
-            File.write parts_path[i], buffer
+            File.write File.join(@filepath_user, parts_path[i]), buffer
             
           end
           
@@ -120,7 +122,7 @@ class Omah
           
           # make a zip file and add the attachments to it
           
-          zipfile = File.join(attachment_path, title[0,12].downcase + '.zip')
+          zipfile = File.join(@filepath_user, attachment_path, title[0,12].downcase + '.zip')
           parts_path[0] = zipfile
 
           Zip::File.open(zipfile, Zip::File::CREATE) do |x|
@@ -138,8 +140,10 @@ class Omah
       msg.delete :attachments
 
       @dd.create msg.merge(txt_filepath: txt_filepath, \
-            html_filepath: html_filepath, attachment1: parts_path[0], \
-                        attachment2: parts_path[1], attachment3: parts_path[2])
+                       html_filepath: html_filepath, \
+                       attachment1: @webpath_user + '/' + parts_path[0], \
+                       attachment2: @webpath_user + '/' + parts_path[1], \
+                       attachment3: @webpath_user + '/' + parts_path[2])
             
     end
     
