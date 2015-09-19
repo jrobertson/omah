@@ -65,10 +65,9 @@ class Omah
 
   end
 
-  def store messages
+  def store(messages)
 
     messages.each.with_index do |msg,i|
-      
 
       subject = msg[:subject]
       
@@ -139,12 +138,14 @@ class Omah
       
       msg.delete :attachments
 
-      @dd.create msg.merge(txt_filepath: txt_filepath, \
-                       html_filepath: html_filepath, \
-                       attachment1: @webpath_user + '/' + parts_path[0], \
-                       attachment2: @webpath_user + '/' + parts_path[1], \
-                       attachment3: @webpath_user + '/' + parts_path[2])
-            
+      h = msg.merge(txt_filepath: txt_filepath, \
+                       html_filepath: html_filepath)
+      parts_path.each.with_index do |path, i|
+        h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
+      end
+
+      @dd.create h
+
     end
     
     if @xslt then
