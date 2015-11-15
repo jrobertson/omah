@@ -106,14 +106,19 @@ class Omah
         
         attachment_path = File.join(path, title + ordinal)
         FileUtils.mkdir_p attachment_path
+        puts 'mkdir : ' + attachment_path.inspect
         
         if msg[:attachments].length < 4 then
           
           msg[:attachments].each.with_index do |x, i|
             
             name, buffer = x
-            parts_path[i] = File.join(attachment_path, name)
-            File.write File.join(@filepath_user, parts_path[i]), buffer
+            parts_path[i] = File.join(attachment_path, name.gsub('/',''))
+            begin
+              File.write File.join(@filepath_user, parts_path[i]), buffer
+            rescue
+              puts ($!)
+            end
             
           end
           
