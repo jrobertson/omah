@@ -107,7 +107,6 @@ class Omah
         
         attachment_path = File.join(path, title + ordinal)
         FileUtils.mkdir_p attachment_path
-        puts 'mkdir : ' + attachment_path.inspect
         
         if msg[:attachments].length < 4 then
           
@@ -139,6 +138,7 @@ class Omah
           end          
           
         end        
+        
 
       end
       
@@ -151,6 +151,10 @@ class Omah
       end
 
       @dd.create h
+      
+      @plugins.each do |x| 
+        x.on_newmessage(h) if x.respond_to? :on_newmessage 
+      end
 
     end
     
@@ -176,7 +180,10 @@ class Omah
       
     end
     
-    @plugins.each{|x| x.on_newmail(messages, doc) }
+    @plugins.each do |x| 
+      x.on_newmail(messages, doc) if x.respond_to? :on_newmail
+    end
+    
     File.write File.join(@filepath_user, 'dynarexdaily.xml'), \
                                                         doc.xml(pretty: true)
     
