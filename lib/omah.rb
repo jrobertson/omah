@@ -27,6 +27,7 @@ class Omah
 
     @user = user
     @xslt = options[:xslt]
+    @css = options[:css]
     @variables ||= {}
 
     @filepath_user = File.expand_path(File.join(filepath, @user))
@@ -157,7 +158,8 @@ class Omah
       
       unless File.exists? @xslt then
         File.write File.expand_path(@xslt), fetch_file(@xslt)
-        File.write File.expand_path(@xslt), fetch_file('listing.css')
+        File.write File.expand_path(@css), fetch_file(@css) if @css and \
+                                                          not File.exists? @css
       end
       
       @dd.xslt = @xslt
