@@ -48,7 +48,7 @@ class Omah
         + 'txt_filepath, html_filepath, attachment1, attachment2, attachment3)'
     end
     
-    @dd = DynarexDaily.new x, options: {dir_archive: :yearly}
+    @dd = DynarexDaily.new x, dir_archive: :yearly
     
     
     # intialize plugins
@@ -90,12 +90,12 @@ class Omah
 
       FileUtils.mkdir_p path
 
-      if msg[:body_text].to_s.strip[0] == '<' then
-        txt_filepath = ''
-      else
-        File.write File.join(@filepath_user, txt_filepath), \
-                                      text_sanitiser(msg[:body_text].to_s)
-      end
+
+      header = %i(from to subject)
+               .map {|x| "%s: %s" % [x, msg[x]] }.join("\n") + "\n--------\n\n"
+      File.write File.join(@filepath_user, txt_filepath), \
+                                      header + text_sanitiser(msg[:body_text].to_s)
+
       
       File.write File.join(@filepath_user, html_filepath), \
                                       html_sanitiser(msg[:body_html].to_s)
