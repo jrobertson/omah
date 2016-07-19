@@ -77,8 +77,10 @@ class Omah
       a = @dd.all.select {|x| x.subject == subject}
 
       ordinal = a.any? ? '.' + a.length.to_s : ''
-      txt_file = title + ordinal + '.txt'
+
+      txt_file = title + ordinal + '.txt'      
       html_file = title + ordinal + '.html'
+      kvx_file = title + ordinal + '.kvx'      
 
       id = msg[:msg_id]
       next if @dd.find_by_msg_id id
@@ -86,17 +88,17 @@ class Omah
       path = archive()      
       txt_filepath = File.join(path, txt_file)
       html_filepath = File.join(path, html_file)
+      kvx_filepath = File.join(path, kvx_file)
       
 
       FileUtils.mkdir_p path
 
-
-      header = %i(from to subject)
-               .map {|x| "%s: %s" % [x, msg[x]] }.join("\n") + "\n--------\n\n"
-      File.write File.join(@filepath_user, txt_filepath), \
-                                      header + text_sanitiser(msg[:body_text].to_s)
-
+      header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
+      Kvx.new(header).save File.join(@filepath_user, kvx_filepath)
       
+      File.write File.join(@filepath_user, txt_filepath), \
+                                      text_sanitiser(msg[:body_text].to_s)
+
       File.write File.join(@filepath_user, html_filepath), \
                                       html_sanitiser(msg[:body_html].to_s)
       
