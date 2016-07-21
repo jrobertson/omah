@@ -78,6 +78,7 @@ class Omah
 
       ordinal = a.any? ? '.' + a.length.to_s : ''
 
+      x_file = title + ordinal
       txt_file = title + ordinal + '.txt'      
       html_file = title + ordinal + '.html'
       kvx_file = title + ordinal + '.kvx'      
@@ -85,7 +86,8 @@ class Omah
       id = msg[:msg_id]
       next if @dd.find_by_msg_id id
 
-      path = archive()      
+      path = archive()
+      x_filepath = File.join(path, x_file)      
       txt_filepath = File.join(path, txt_file)
       html_filepath = File.join(path, html_file)
       kvx_filepath = File.join(path, kvx_file)
@@ -93,13 +95,18 @@ class Omah
 
       FileUtils.mkdir_p path
 
-      header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
-      Kvx.new(header).save File.join(@filepath_user, kvx_filepath)
+      if msg[:raw_source] then
+        File.write File.join(@filepath_user, x_filepath + '.eml'), \
+                    msg[:raw_source]
+      end
       
-      File.write File.join(@filepath_user, txt_filepath), \
+      header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
+      Kvx.new(header).save File.join(@filepath_user, x_filepath + '.kvx')
+      
+      File.write File.join(@filepath_user, x_filepath + '.txt'), \
                                       text_sanitiser(msg[:body_text].to_s)
 
-      File.write File.join(@filepath_user, html_filepath), \
+      File.write File.join(@filepath_user, x_filepath + '.html'), \
                                       html_sanitiser(msg[:body_html].to_s)
       
       parts_path = []
