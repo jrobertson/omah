@@ -47,7 +47,7 @@ class Omah
       'messages[date]/message(msg_id, tags, from, to, subject, date, ' \
         + 'txt_filepath, html_filepath, attachment1, attachment2, attachment3)'
     end
-    
+
     @dd = DynarexDaily.new x, dir_archive: :yearly
     
     
@@ -79,19 +79,14 @@ class Omah
       ordinal = a.any? ? '.' + a.length.to_s : ''
 
       x_file = title + ordinal
-      txt_file = title + ordinal + '.txt'      
-      html_file = title + ordinal + '.html'
-      kvx_file = title + ordinal + '.kvx'      
 
       id = msg[:msg_id]
+
       next if @dd.find_by_msg_id id
 
       path = archive()
-      x_filepath = File.join(path, x_file)      
-      txt_filepath = File.join(path, txt_file)
-      html_filepath = File.join(path, html_file)
-      kvx_filepath = File.join(path, kvx_file)
-      
+
+      x_filepath = File.join(path, x_file)            
 
       FileUtils.mkdir_p path
 
@@ -99,14 +94,16 @@ class Omah
         File.write File.join(@filepath_user, x_filepath + '.eml'), \
                     msg[:raw_source]
       end
-      
+
       header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
       Kvx.new(header).save File.join(@filepath_user, x_filepath + '.kvx')
       
-      File.write File.join(@filepath_user, x_filepath + '.txt'), \
+      txt_filepath = x_filepath + '.txt'
+      File.write File.join(@filepath_user, txt_filepath), \
                                       text_sanitiser(msg[:body_text].to_s)
 
-      File.write File.join(@filepath_user, x_filepath + '.html'), \
+      html_filepath = x_filepath + '.html'
+      File.write File.join(@filepath_user, html_filepath), \
                                       html_sanitiser(msg[:body_html].to_s)
       
       parts_path = []
