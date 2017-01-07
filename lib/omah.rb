@@ -43,13 +43,35 @@ class Omah
     dailyfile = 'dynarexdaily.xml'
     
     x = if File.exists? dailyfile then dailyfile
+
     else
-      'messages[date]/message(msg_id, tags, from, to, subject, date, ' \
-        + 'txt_filepath, html_filepath, attachment1, attachment2, attachment3)'
+      
+      'messages[date, prev_date, next_date]/message(msg_id, tags, from, ' + \
+      'to, subject, date, txt_filepath, html_filepath, attachment1, ' + \
+      'attachment2, attachment3)'        
+
     end
 
-    @dd = DynarexDaily.new x, dir_archive: :yearly
+    @dd = DynarexDaily.new x, dir_archive: :yearly   
     
+    # is it a new day?
+    
+    if @dd.records.empty? then
+      
+      date_yesterday = (Date.today - 1).strftime("%Y/%b/%d").downcase
+      @dd.prev_date = File.join(@webpath_user, date_yesterday)
+      
+      # add the next_day field value to the previous day file
+      
+      file_yesterday = date_yesterday + '/index.xml'
+      dx_yesterday = Dynarex.new file_yesterday
+      dx_yesterday.next_date = File.join(@webpath_user, 
+                                    (Date.today).strftime("%Y/%b/%d").downcase)
+      dx_yesterday.xslt = options[:archive_xsl] if options[:archive_xsl]
+      dx_yesterday.save
+      
+    end
+
     
     # intialize plugins
         
@@ -210,7 +232,7 @@ class Omah
     s = e.text.to_s    
     return if s.empty?
     
-    e.attributes[:css_class] = NoVowels.compact(e.text[/[^@]+$/].gsub('.',''))
+    e.attributes[:css_class] = NoVowels.compact(t.gsub(/[\.@]/,''))
   end    
 
   def html_sanitiser(s)

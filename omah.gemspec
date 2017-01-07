@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'omah'
-  s.version = '0.7.2'
+  s.version = '0.7.3'
   s.summary = 'Offline Mail Helper: Stores email messages in a file directory archive'
   s.authors = ['James Robertson']
   s.files = Dir['lib/omah.rb','stylesheet/listing.xsl','stylesheet/listing.css']
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.signing_key = '../privatekeys/omah.pem'
   s.cert_chain  = ['gem-public_cert.pem']
   s.license = 'MIT'
-  s.email = 'james@r0bertson.co.uk'
+  s.email = 'james@jamesrobertson.eu'
   s.homepage = 'https://github.com/jrobertson/omah'
   s.required_ruby_version = '>= 2.1.2'
 end
