@@ -232,7 +232,7 @@ class Omah
     s = e.text.to_s    
     return if s.empty?
     
-    e.attributes[:css_class] = NoVowels.compact(t.gsub(/[\.@]/,''))
+    e.attributes[:css_class] = NoVowels.compact(s.gsub(/[\.@]/,''))
   end    
 
   def html_sanitiser(s)
