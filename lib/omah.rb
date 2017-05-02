@@ -180,12 +180,12 @@ class Omah
       parts_path.each.with_index do |path, i|
         h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
       end
-
-      @dd.create h
       
       @plugins.each do |x| 
         x.on_newmessage(h) if x.respond_to? :on_newmessage 
       end
+      
+      @dd.create h      
 
     end
     
