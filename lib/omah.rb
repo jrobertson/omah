@@ -57,21 +57,24 @@ class Omah
     # is it a new day?
     
     if @dd.records.empty? then
-      
+            
       date_yesterday = (Date.today - 1).strftime("%Y/%b/%d").downcase
       @dd.prev_date = File.join(@webpath_user, date_yesterday)
       
       # add the next_day field value to the previous day file
       
       file_yesterday = date_yesterday + '/index.xml'
-      dx_yesterday = Dynarex.new file_yesterday
-      dx_yesterday.next_date = File.join(@webpath_user, 
-                                    (Date.today).strftime("%Y/%b/%d").downcase)
-      dx_yesterday.xslt = options[:archive_xsl] if options[:archive_xsl]
-      dx_yesterday.save
+
+      if File.exists? file_yesterday then
+        
+        dx_yesterday = Dynarex.new file_yesterday
+        dx_yesterday.next_date = File.join(@webpath_user, 
+                                      (Date.today).strftime("%Y/%b/%d").downcase)
+        dx_yesterday.xslt = options[:archive_xsl] if options[:archive_xsl]
+        dx_yesterday.save
+      end
       
     end
-
     
     # intialize plugins
         
