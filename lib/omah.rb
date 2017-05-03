@@ -23,7 +23,8 @@ class Omah
   include Library
   
   def initialize(user: 'user', filepath: '.', \
-             options: {xslt: 'listing.xsl'}, plugins: [], webpath: '/email' )
+             options: {xslt: 'listing.xsl'}, plugins: [], webpath: '/email', 
+                 url_base: 'http://localhost/' )
 
     @user = user
     @xslt = options[:xslt]
@@ -32,6 +33,7 @@ class Omah
 
     @filepath_user = File.expand_path(File.join(filepath, @user))
     @webpath_user = webpath +'/' + @user
+    @url_base = url_base
 
     Dir.chdir filepath
 
@@ -180,6 +182,8 @@ class Omah
       parts_path.each.with_index do |path, i|
         h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
       end
+      
+      h[:link] = File.join(@url_base, @webpath_user, html_filepath)
       
       @plugins.each do |x| 
         x.on_newmessage(h) if x.respond_to? :on_newmessage 
