@@ -23,8 +23,8 @@ class Omah
   include Library
   
   def initialize(user: 'user', filepath: '.', \
-             options: {xslt: 'listing.xsl'}, plugins: [], webpath: '/email', 
-                 url_base: 'http://localhost/' )
+             options: {xslt: 'listing.xsl', url_base: 'http://localhost/' }, 
+                 plugins: [], webpath: '/email')
 
     @user = user
     @xslt = options[:xslt]
@@ -33,7 +33,7 @@ class Omah
 
     @filepath_user = File.expand_path(File.join(filepath, @user))
     @webpath_user = webpath +'/' + @user
-    @url_base = url_base
+    @url_base = options[:url_base]
 
     Dir.chdir filepath
 
