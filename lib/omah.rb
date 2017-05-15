@@ -97,7 +97,7 @@ class Omah
 
     messages.each.with_index do |msg,i|
 
-      subject = msg[:subject]
+      subject = msg[:subject] || ''
       
       title = subject.gsub(/\W+/,'-')[0,30].sub(/-$/,'')
 
@@ -182,12 +182,10 @@ class Omah
       parts_path.each.with_index do |path, i|
         h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
       end
-      
+
       h[:link] = File.join(@url_base, @webpath_user, html_filepath)
-      
-      @plugins.each do |x| 
-        x.on_newmessage(h) if x.respond_to? :on_newmessage 
-      end
+
+      @plugins.each {|x| x.on_newmessage(h) if x.respond_to? :on_newmessage }
       
       @dd.create h      
 
@@ -214,7 +212,7 @@ class Omah
       classify message.element('to')
       
     end
-    
+
     @plugins.each do |x| 
       x.on_newmail(messages, doc) if x.respond_to? :on_newmail
     end
