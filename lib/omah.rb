@@ -99,7 +99,7 @@ class Omah
 
       subject = msg[:subject] || ''
       
-      title = subject.gsub(/\W+/,'-')[0,30].sub(/-$/,'')
+      title = subject.gsub(/\W+/,'-')[0,30].sub(/^-/,'').sub(/-$/,'')
 
       a = @dd.all.select {|x| x.subject == subject}
 
