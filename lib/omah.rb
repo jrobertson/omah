@@ -33,7 +33,7 @@ class Omah
 
     @filepath_user = File.expand_path(File.join(filepath, @user))
     @webpath_user = webpath +'/' + @user
-    @url_base = options[:url_base]
+    @url_base = options[:url_base] || '.'
 
     Dir.chdir filepath
 
@@ -85,9 +85,11 @@ class Omah
       name, settings = plugin
       return r if settings[:active] == false and !settings[:active]
       
-      klass_name = 'OmahPlugin' + name.to_s.split(/[-_]/).map{|x| x.capitalize}.join
+      klass_name = 'OmahPlugin' + name.to_s.split(/[-_]/)\
+          .map{|x| x.capitalize}.join
 
-      r << Kernel.const_get(klass_name).new(settings: settings, variables: @variables)
+      r << Kernel.const_get(klass_name).new(settings: settings, 
+                                            variables: @variables)
 
     end    
 
@@ -159,7 +161,8 @@ class Omah
           
           # make a zip file and add the attachments to it
           
-          zipfile = File.join(@filepath_user, attachment_path, title[0,12].downcase + '.zip')
+          zipfile = File.join(@filepath_user, attachment_path, 
+                              title[0,12].downcase + '.zip')
           parts_path[0] = zipfile
 
           Zip::File.open(zipfile, Zip::File::CREATE) do |x|
@@ -181,6 +184,35 @@ class Omah
                        html_filepath: html_filepath)
       parts_path.each.with_index do |path, i|
         h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
+      end
+      
+      if parts_path.any? then
+        
+        attachments = parts_path.map do |path|
+          "<li><a href='%s'>%s</a></li>" % [@webpath_user + '/' + path, 
+                                            File.basename(path)]
+        end
+        
+        
+html_page= %Q(
+<html>
+  <head>
+    <title>#{title}</title>
+    <meta content="">
+    <style></style>
+  </head>
+  <body>
+    <iframe src='../#{File.basename(html_filepath)}'></iframe>   
+    <h2>attachments</h2>
+    <ul>
+      #{attachments.join("\n")}
+    </ul>
+  </body>
+</html>
+)
+
+        File.write File.join(attachment_path, 'index.html'), html_page
+        h[:html_filepath] = File.join(attachment_path, 'index.html')
       end
 
       h[:link] = File.join(@url_base, @webpath_user, html_filepath)
