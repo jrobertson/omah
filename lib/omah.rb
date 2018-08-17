@@ -21,30 +21,37 @@ end
 class Omah
 
   include Library
+  include RXFHelperModule
   
   def initialize(user: 'user', filepath: '.', \
              options: {xslt: 'listing.xsl', url_base: 'http://localhost/' }, 
-                 plugins: [], webpath: '/email')
+                 plugins: [], webpath: '/email', debug: false)
 
+    
+    puts 'inside Omah::initialize' if @debug
+    
     @user = user
     @xslt = options[:xslt]
     @css = options[:css]
     @variables ||= {}
 
-    @filepath_user = File.expand_path(File.join(filepath, @user))
+    @filepath_user = File.join(filepath, @user)
     @webpath_user = webpath +'/' + @user
     @url_base = options[:url_base] || '.'
+    @debug = debug
 
-    Dir.chdir filepath
+    puts 'Omah::initialize filepath: ' + filepath.inspect if @debug
+    
+    FileX.chdir filepath
 
-    FileUtils.mkdir_p @filepath_user # attempt to 
-    #                                     mkdir regardless if it already exists
+    puts 'Omah::initialize making directory ' + @filepath_user if @debug
+    FileX.mkdir_p @filepath_user 
 
-    Dir.chdir @filepath_user
+    FileX.chdir @filepath_user
     
     dailyfile = 'dynarexdaily.xml'
     
-    x = if File.exists? dailyfile then dailyfile
+    x = if FileX.exists? dailyfile then dailyfile
 
     else
       
@@ -54,8 +61,9 @@ class Omah
 
     end
 
+    puts 'Omah::initialize before DynarexDaily' if @debug
     @dd = DynarexDaily.new x, dir_archive: :yearly   
-    
+    puts 'Omah::initialize after DynarexDaily' if @debug
     # is it a new day?
     
     if @dd.records.empty? then
@@ -67,7 +75,7 @@ class Omah
       
       file_yesterday = date_yesterday + '/index.xml'
 
-      if File.exists? file_yesterday then
+      if FileX.exists? file_yesterday then
         
         dx_yesterday = Dynarex.new file_yesterday
         dx_yesterday.next_date = File.join(@webpath_user, 
@@ -80,16 +88,21 @@ class Omah
     
     # intialize plugins
         
+    puts 'Omah::initialize before plugins' if @debug
+    
     @plugins = plugins.inject([]) do |r, plugin|
       
       name, settings = plugin
+      
+      puts 'Omah::initialize plugin: ' + name.inspect if @debug
+      
       return r if settings[:active] == false and !settings[:active]
       
       klass_name = 'OmahPlugin' + name.to_s.split(/[-_]/)\
           .map{|x| x.capitalize}.join
 
       r << Kernel.const_get(klass_name).new(settings: settings, 
-                                            variables: @variables)
+                                            variables: @variables, debug: @debug)
 
     end    
 
@@ -99,6 +112,7 @@ class Omah
 
     messages.each.with_index do |msg,i|
 
+      puts "i: %d msg: %s" % [i, msg]
       subject = msg[:subject] || ''
       
       title = subject.gsub(/\W+/,'-')[0,30].sub(/^-/,'').sub(/-$/,'')
@@ -117,10 +131,12 @@ class Omah
 
       x_filepath = File.join(path, x_file)            
 
-      FileUtils.mkdir_p path
+      puts 'FileX.pwd ' + FileX.pwd if @debug
+      puts 'Omah::store before mkdir_p path: ' + path.inspect if @debug
+      FileX.mkdir_p path
 
       if msg[:raw_source] then
-        File.write File.join(@filepath_user, x_filepath + '.eml'), \
+        FileX.write File.join(@filepath_user, x_filepath + '.eml'), \
                     msg[:raw_source]
       end
 
@@ -128,11 +144,11 @@ class Omah
       Kvx.new(header).save File.join(@filepath_user, x_filepath + '.kvx')
       
       txt_filepath = x_filepath + '.txt'
-      File.write File.join(@filepath_user, txt_filepath), \
+      FileX.write File.join(@filepath_user, txt_filepath), \
                                       text_sanitiser(msg[:body_text].to_s)
 
       html_filepath = x_filepath + '.html'
-      File.write File.join(@filepath_user, html_filepath), \
+      FileX.write File.join(@filepath_user, html_filepath), \
                                       html_sanitiser(msg[:body_html].to_s)
       
       parts_path = []
@@ -141,7 +157,7 @@ class Omah
       if msg[:attachments].length > 0 then
         
         attachment_path = File.join(path, title + ordinal)
-        FileUtils.mkdir_p attachment_path
+        FileX.mkdir_p attachment_path
         
         if msg[:attachments].length < 4 then
           
@@ -150,7 +166,7 @@ class Omah
             name, buffer = x
             parts_path[i] = File.join(attachment_path, name.gsub('/',''))
             begin
-              File.write File.join(@filepath_user, parts_path[i]), buffer
+              FileX.write File.join(@filepath_user, parts_path[i]), buffer
             rescue
               puts ($!)
             end
@@ -164,14 +180,8 @@ class Omah
           zipfile = File.join(@filepath_user, attachment_path, 
                               title[0,12].downcase + '.zip')
           parts_path[0] = zipfile
-
-          Zip::File.open(zipfile, Zip::File::CREATE) do |x|
-
-            msg[:attachments].each do |filename, buffer| 
-              x.get_output_stream(filename) {|os| os.write buffer }
-            end
-
-          end          
+          
+          FileX.zip zipfile, msg[:attachments]
           
         end        
         
@@ -211,7 +221,7 @@ html_page= %Q(
 </html>
 )
 
-        File.write File.join(attachment_path, 'index.html'), html_page
+        FileX.write File.join(attachment_path, 'index.html'), html_page
         h[:html_filepath] = File.join(attachment_path, 'index.html')
       end
 
@@ -225,10 +235,10 @@ html_page= %Q(
     
     if @xslt then
       
-      unless File.exists? @xslt then
-        File.write File.expand_path(@xslt), fetch_file(@xslt)
-        File.write File.expand_path(@css), fetch_file(@css) if @css and \
-                                                          not File.exists? @css
+      unless FileX.exists? @xslt then
+        FileX.write File.expand_path(@xslt), fetch_file(@xslt)
+        FileX.write File.expand_path(@css), fetch_file(@css) if @css and \
+                                                          not FileX.exists? @css
       end
       
       @dd.xslt = @xslt
@@ -249,7 +259,7 @@ html_page= %Q(
       x.on_newmail(messages, doc) if x.respond_to? :on_newmail
     end
     
-    File.write File.join(@filepath_user, 'dynarexdaily.xml'), \
+    FileX.write File.join(@filepath_user, 'dynarexdaily.xml'), \
                                                         doc.xml(pretty: true)
     
   end
