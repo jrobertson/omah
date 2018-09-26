@@ -3,7 +3,6 @@
 # file: omah.rb
 # title: Offline Mail Helper
 
-require 'zip'
 require 'nokorexi'
 require 'dynarex-daily'
 require 'novowels'
@@ -49,7 +48,7 @@ class Omah
 
     FileX.chdir @filepath_user
     
-    dailyfile = 'dynarexdaily.xml'
+    dailyfile = File.join(@filepath_user, 'dynarexdaily.xml')
     
     x = if FileX.exists? dailyfile then dailyfile
 
@@ -57,18 +56,20 @@ class Omah
       
       'messages[date, prev_date, next_date]/message(msg_id, tags, from, ' + \
       'to, subject, date, txt_filepath, html_filepath, attachment1, ' + \
-      'attachment2, attachment3)'        
+      'attachment2, attachment3, attachments)'        
 
     end
 
     puts 'Omah::initialize before DynarexDaily' if @debug
-    @dd = DynarexDaily.new x, dir_archive: :yearly   
+    @dd = DynarexDaily.new x, dir_archive: :yearly, debug: @debug   
     puts 'Omah::initialize after DynarexDaily' if @debug
     # is it a new day?
     
     if @dd.records.empty? then
             
-      date_yesterday = (Date.today - 1).strftime("%Y/%b/%d").downcase
+      date_yesterday = File.join(@filepath_user, 
+                                (Date.today - 1).strftime("%Y/%b/%d").downcase)
+      
       @dd.prev_date = File.join(@webpath_user, date_yesterday)
       
       # add the next_day field value to the previous day file
@@ -110,58 +111,60 @@ class Omah
 
   def store(messages)
 
-    messages.each.with_index do |msg,i|
-
-      puts "i: %d msg: %s" % [i, msg]
-      subject = msg[:subject] || ''
+    messages.each.with_index do |x,i|
       
-      title = subject.gsub(/\W+/,'-')[0,30].sub(/^-/,'').sub(/-$/,'')
-
-      a = @dd.all.select {|x| x.subject == subject}
-
-      ordinal = a.any? ? '.' + a.length.to_s : ''
-
-      x_file = title + ordinal
-
-      id = msg[:msg_id]
-
-      next if @dd.find_by_msg_id id
-
-      path = archive()
-
-      x_filepath = File.join(path, x_file)            
-
-      puts 'FileX.pwd ' + FileX.pwd if @debug
-      puts 'Omah::store before mkdir_p path: ' + path.inspect if @debug
-      FileX.mkdir_p path
-
-      if msg[:raw_source] then
-        FileX.write File.join(@filepath_user, x_filepath + '.eml'), \
-                    msg[:raw_source]
-      end
-
-      header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
-      Kvx.new(header).save File.join(@filepath_user, x_filepath + '.kvx')
+      email, msg = x
       
-      txt_filepath = x_filepath + '.txt'
-      FileX.write File.join(@filepath_user, txt_filepath), \
-                                      text_sanitiser(msg[:body_text].to_s)
-
-      html_filepath = x_filepath + '.html'
-      FileX.write File.join(@filepath_user, html_filepath), \
-                                      html_sanitiser(msg[:body_html].to_s)
-      
-      parts_path = []
-      
-      # save the attachments
-      if msg[:attachments].length > 0 then
+      begin
         
-        attachment_path = File.join(path, title + ordinal)
-        FileX.mkdir_p attachment_path
+        puts "i: %d msg: %s" % [i, msg] if @debug
+        subject = msg[:subject] || ''
         
-        if msg[:attachments].length < 4 then
+        title = subject.gsub(/\W+/,'-')[0,30].sub(/^-/,'').sub(/-$/,'')
+
+        a = @dd.all.select {|x| x.subject == subject}
+
+        ordinal = a.any? ? '.' + a.length.to_s : ''
+
+        x_file = title + ordinal
+
+        id = msg[:msg_id]
+
+        next if @dd.find_by_msg_id id
+
+        path = archive()
+
+        x_filepath = File.join(path, x_file)            
+
+        puts 'FileX.pwd ' + FileX.pwd if @debug
+        puts 'Omah::store before mkdir_p path: ' + path.inspect if @debug
+        FileX.mkdir_p path
+
+        if msg[:raw_source] then
+          FileX.write File.join(@filepath_user, x_filepath + '.eml'), \
+                      msg[:raw_source]
+        end
+
+        header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
+        Kvx.new(header).save File.join(@filepath_user, x_filepath + '.kvx')
+        
+        txt_filepath = x_filepath + '.txt'
+        FileX.write File.join(@filepath_user, txt_filepath), \
+                                        text_sanitiser(msg[:body_text].to_s)
+
+        html_filepath = x_filepath + '.html'
+        FileX.write File.join(@filepath_user, html_filepath), \
+                                        html_sanitiser(msg[:body_html].to_s)
+        
+        parts_path = []
+        
+        # save the attachments
+        if msg[:attachments].length > 0 then
           
-          msg[:attachments].each.with_index do |x, i|
+          attachment_path = File.join(path, title + ordinal)
+          FileX.mkdir_p attachment_path
+          
+          msg[:attachments][0..2].each.with_index do |x, i|
             
             name, buffer = x
             parts_path[i] = File.join(attachment_path, name.gsub('/',''))
@@ -171,39 +174,28 @@ class Omah
               puts ($!)
             end
             
-          end
+          end          
           
-        else
-          
-          # make a zip file and add the attachments to it
-          
-          zipfile = File.join(@filepath_user, attachment_path, 
-                              title[0,12].downcase + '.zip')
-          parts_path[0] = zipfile
-          
-          FileX.zip zipfile, msg[:attachments]
-          
-        end        
-        
+          h[:attachments] = msg[:attachments].map(&:first)
 
-      end
-      
-      msg.delete :attachments
-
-      h = msg.merge(txt_filepath: txt_filepath, \
-                       html_filepath: html_filepath)
-      parts_path.each.with_index do |path, i|
-        h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
-      end
-      
-      if parts_path.any? then
-        
-        attachments = parts_path.map do |path|
-          "<li><a href='%s'>%s</a></li>" % [@webpath_user + '/' + path, 
-                                            File.basename(path)]
         end
         
+        msg.delete :attachments
+
+        h = msg.merge(txt_filepath: txt_filepath, \
+                        html_filepath: html_filepath)
+        parts_path.each.with_index do |path, i|
+          h.merge!("attachment#{i+1}" => @webpath_user + '/' + path)
+        end
         
+        if parts_path.any? then
+          
+          attachments = parts_path.map do |path|
+            "<li><a href='%s'>%s</a></li>" % [@webpath_user + '/' + path, 
+                                              File.basename(path)]
+          end
+          
+          
 html_page= %Q(
 <html>
   <head>
@@ -221,15 +213,23 @@ html_page= %Q(
 </html>
 )
 
-        FileX.write File.join(attachment_path, 'index.html'), html_page
-        h[:html_filepath] = File.join(attachment_path, 'index.html')
-      end
+          FileX.write File.join(attachment_path, 'index.html'), html_page
+          h[:html_filepath] = File.join(attachment_path, 'index.html')
+        end
 
-      h[:link] = File.join(@url_base, @webpath_user, html_filepath)
+        h[:link] = File.join(@url_base, @webpath_user, html_filepath)
 
-      @plugins.each {|x| x.on_newmessage(h) if x.respond_to? :on_newmessage }
+        @plugins.each {|x| x.on_newmessage(h) if x.respond_to? :on_newmessage }
+        
+        @dd.create h
       
-      @dd.create h      
+      
+        # remove the message from the server
+        #jr250918 email.delete
+        
+      rescue
+        puts 'Omah::store warning: ' + ($!).inspect
+      end
 
     end
     
