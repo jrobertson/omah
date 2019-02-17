@@ -146,7 +146,8 @@ class Omah
         end
 
         header = %i(from to subject).inject({}) {|r,x| r.merge(x => msg[x]) }
-        Kvx.new(header).save File.join(@filepath_user, x_filepath + '.kvx')
+        filepath = File.join(@filepath_user, x_filepath + '.kvx')
+        Kvx.new(header, debug: false).save filepath
         
         txt_filepath = x_filepath + '.txt'
         FileX.write File.join(@filepath_user, txt_filepath), \
