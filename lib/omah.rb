@@ -70,7 +70,8 @@ class Omah
       date_yesterday = File.join(@filepath_user, 
                                 (Date.today - 1).strftime("%Y/%b/%d").downcase)
       
-      @dd.prev_date = File.join(@webpath_user, date_yesterday)
+      @dd.prev_date = File.join(@webpath_user, 
+                                (Date.today - 1).strftime("%Y/%b/%d").downcase)
       
       # add the next_day field value to the previous day file
       
