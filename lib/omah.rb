@@ -6,23 +6,22 @@
 require 'nokorexi'
 require 'dynarex-daily'
 require 'novowels'
+require 'rxfreadwrite'
 
 module Library
 
   def fetch_file(filename)
 
-    #lib = File.dirname(__FILE__)
-    #File.read filename
-    lib = 'http://a0.jamesrobertson.me.uk/rorb/r/ruby/omah/'
-    URI.open(File.join(lib, filename),
-      'UserAgent' => 'Omah'){|x| x.read }
+    lib = File.dirname(__FILE__)
+    File.read filename
+
   end
 end
 
 class Omah
 
   include Library
-  include RXFHelperModule
+  include RXFReadWriteModule
 
   def initialize(user: 'user', filepath: '.', \
              options: {xslt: 'listing.xsl', url_base: 'http://localhost/' },
